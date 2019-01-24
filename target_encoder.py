@@ -1,9 +1,8 @@
+import pandas as pd
+import numpy as np
+
 from custom_code import timefold
 from sklearn import preprocessing
-
-
-df = pd.read_hdf('./local_data/features.h5')
-df = df.tail(10000).copy().reset_index(drop=True)
 
 # Create some dummy data
 df = pd.DataFrame({

@@ -4,6 +4,40 @@ import numpy as np
 from custom_code import timefold
 from sklearn import preprocessing
 
+
+def target_encoder(df, column, target, index=None, method='mean'):
+    """
+    Target-based encoding is numerization of a categorical variables via the target variable. Main purpose is to deal
+    with high cardinality categorical features without exploding dimensionality. This replaces the categorical variable
+    with just one new numerical variable. Each category or level of the categorical variable is represented by a
+    summary statistic of the target for that level.
+
+    Args:
+        df (pandas df): Pandas DataFrame containing the categorical column and target.
+        column (str): Categorical variable column to be encoded.
+        target (str): Target on which to encode.
+        index (arr): Can be supplied to use targets only from the train index. Avoids data leakage from the test fold
+        method (str): Summary statistic of the target. Mean, median or std. deviation.
+
+    Returns:
+        arr: Encoded categorical column.
+
+    """
+
+    index = df.index if index is None else index # Encode the entire input df if no specific indices is supplied
+
+    if method == 'mean':
+        encoded_column = df[column].map(df.iloc[index].groupby(column)[target].mean())
+    elif method == 'median':
+        encoded_column = df[column].map(df.iloc[index].groupby(column)[target].median())
+    elif method == 'std':
+        encoded_column = df[column].map(df.iloc[index].groupby(column)[target].std())
+    else:
+        raise ValueError("Incorrect method supplied: '{}'. Must be one of 'mean', 'median', 'std'".format(method))
+
+    return encoded_column
+
+
 # Create some dummy data
 df = pd.DataFrame({
     'product_id': ['a'] * 4 + ['c'] * 1 + ['b'] * 5 + ['a'] * 1 + ['c'] * 3 + ['b'] * 1,
@@ -26,46 +60,14 @@ for fold, (train_idx, test_idx) in enumerate(timefolds.split(df)):
 
 train_idx, test_idx
 
-df['product_id_encoded'] = target_encoder(df, column='product_id', target='actual', index=train_idx, method='mean')
+df['product_id_encoded'] = target_encoder(df, column='product_id', target='actual', method='mean')
 df
 
-df['product_type_id_encoded'] = target_encoder(df, column='product_type_id', target='actual', index=train_idx, method='mean')
+df['product_type_id'] = target_encoder(df, column='product_type_id', target='actual', index=train_idx, method='mean')
 df
-
-
-
-def target_encoder(df, column, target, index, method='mean'):
-    """
-    Target-based encoding is numerization of a categorical variables via the target variable. This replaces the
-    categorical variable with just one new numerical variable. Each category or level of the categorical variable
-    is represented by it's summary statistic of the target. Main purpose is to deal with high cardinality categorical
-    features.
-
-    Source: A Preprocessing Scheme for High-Cardinality Categorical Attributes in Classification and Prediction Problems
-    http://helios.mm.di.uoa.gr/~rouvas/ssi/sigkdd/sigkdd.vol3.1/barreca.ps
-
-    Args:
-        df (pandas df): Pandas DataFrame containing the categorical column and target.
-        column (str): Categorical variable column to be encoded.
-        target (str): Target on which to encode.
-        index (arr): Use targets only from the train index to avoid data leakage from the test fold
-        method (str): Summary statistic of the target.
-
-    Returns:
-        arr: Encoded categorical variable column.
-
-    """
-
-    if method == 'mean':
-        encoded_column = df[column].map(df.iloc[index].groupby(column)[target].mean())
-    elif method == 'median':
-        encoded_column = df[column].map(df.iloc[index].groupby(column)[target].median())
-    else:
-        raise ValueError("Incorrect method supplied: '{}'. Must be one of 'mean', 'median'".format(method))
-
-    return encoded_column
 
 encoded_column = target_encoder(df, column='product_id', target='actual', index=train_idx, method='mean')
+
 
 
 
